@@ -92,7 +92,7 @@ asian_covid %>%
         legend.text = element_text(size = 12)) +
   guides(color = guide_legend(nrow = 1, override.aes = list(size  = 5))) +
   labs(title = "COVID-19 cases, tests, positive rate, and reproduction rate",
-       subtitle = "Note: 7-day rolling average. Dues to limited testing, the number of confirmed cases is lower than the true number of infections",
+       subtitle = "Note: 7-day rolling average. Due to limited testing, the number of confirmed cases is lower than the true number of infections",
        caption = "Source: Johns Hopkins University CSSE COVID-19 Data",
        x = element_blank(),
        y = element_blank(),
