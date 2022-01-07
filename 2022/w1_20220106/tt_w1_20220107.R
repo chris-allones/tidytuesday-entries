@@ -101,3 +101,8 @@ asian_covid %>%
 
 # Saving plot
 ggsave("2022/w1_20220106/asian_covid.jpg", units = "in", width = 10, height = 8)
+
+
+
+
+
