@@ -1,4 +1,8 @@
+# TidyTuesday Week 1: Bring you own data
 # Data source: https://ourworldindata.org/covid-vaccinations
+
+
+# Libraries
 
 library(tidyverse)
 library(janitor)
@@ -6,33 +10,28 @@ library(lubridate)
 library(zoo)
 
 
+# Reading data and wrangling
 
 covid <- read_csv("2022/w1_20220106/owid-covid-data.csv") %>% 
   clean_names() %>% 
   remove_empty("cols")
 
-selected_country <- c("Singapore",
-                      "Thailand",
-                      "Vietnam",
-                      "Malaysia",
-                      "Cambodia",
-                      "Philippines",
-                      "Indonesia",
-                      "Brunei",
-                      "Timor",
-                      "Laos",
-                      "Myanmar")
+selected_country <- c("Singapore", "Thailand", "Vietnam", "Malaysia",
+                      "Cambodia", "Philippines", "Indonesia", "Brunei",
+                      "Timor", "Laos", "Myanmar")
+
+highlight_country <- c("Thailand", "Philippines", "Brunei", "Malaysia")
 
 
 asian_covid <- covid %>% 
   filter(continent == "Asia") %>% 
-  select(continent, location,
+  select(continent,
+         location,
          date,
          new_cases_per_million,
          new_tests_per_thousand,
          positive_rate, 
-         reproduction_rate
-         ) %>% 
+         reproduction_rate) %>% 
   filter(location %in% selected_country) %>% 
   mutate(date = dmy(date)) %>% 
   pivot_longer(cols = new_cases_per_million:reproduction_rate,
@@ -48,15 +47,15 @@ asian_covid <- covid %>%
                                  param == "positive_rate" ~ "Positive test rate (%)",
                                  param == "reproduction_rate" ~ "Reproduction rate (%)",
                                  TRUE ~ param)) %>% 
-  mutate(location_label = case_when(!location %in% c("Thailand", "Philippines", "Brunei", "Malaysia") ~ "Other",
+  mutate(location_label = case_when(!location %in% highlight_country ~ "Other",
                                     TRUE ~ location),
          location = fct_reorder(location, values_rolling))
-  
+
+
+# Plot
 
 asian_covid %>% 
-  ggplot(aes(y = values_rolling, 
-             x = date,
-             group = location)) +
+  ggplot(aes(y = values_rolling, x = date, group = location)) +
   geom_line(alpha = 0.5,
             linetype = "dashed",
             color = "grey60") +
@@ -99,4 +98,6 @@ asian_covid %>%
        y = element_blank(),
        color = element_blank())
 
+
+# Saving plot
 ggsave("2022/w1_20220106/asian_covid.jpg", units = "in", width = 10, height = 8)
