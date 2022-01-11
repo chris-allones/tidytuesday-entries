@@ -8,6 +8,7 @@ library(janitor)
 library(sf)
 library(grid)
 library(cowplot)
+library(showtext)
 
 
 # Reading data and wrangling ----
@@ -15,26 +16,25 @@ library(cowplot)
 colony <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/colony.csv') %>% 
   clean_names() %>% 
   filter(year != "6/") %>% 
-  select(year, months, state, colony_lost_pct)
-
-colony <- colony %>% 
+  select(year, months, state, colony_lost_pct) %>% 
   group_by(year, months, state) %>% 
   summarise(colony_lost_pct = mean(na.omit(colony_lost_pct))) %>% 
   ungroup
 
-blue_pal <- c("#013a63", "#2a6f97", "#90caf9", "#f0efeb")
-
-na_pal <- "#f7fff7"
-
-max <- max(na.omit(colony$colony_lost_pct))
-
 us_counties <- st_as_sf(maps::map(database = "state", plot = FALSE, fill = TRUE)) %>% 
   mutate(state  = str_to_title(ID))
 
-colony_lost <- us_counties %>% 
-  left_join(colony)
 
-# Plot
+
+# Plot ----
+
+blue_pal <- c("#013a63", "#2a6f97", "#90caf9", "#f0efeb")
+na_pal <- "#f7fff7"
+max <- max(na.omit(colony$colony_lost_pct))
+sysfonts::font_add_google("Lobster", "lobs")
+sysfonts::font_add_google("Caveat", "cav")
+showtext_auto()
+
 
 bee_plot <- function(yrs, month) {
   
@@ -168,10 +168,10 @@ Y42021 <- bee_plot(yrs = "2021", month = "October-December")
 
 # Plot position
 
-x1<-0.17
-x2<-0.37
-x3<-0.57
-x4<-0.77
+x1<-0.12
+x2<-0.33
+x3<-0.54
+x4<-0.76
 
 y1 <- 0.55
 y2 <- 0.40
@@ -179,8 +179,8 @@ y3 <- 0.26
 y4 <- 0.12
 y5 <- 0.9
 
-h<-0.2
-w<-0.2
+h<-0.21
+w<-0.21
 
 legend <- cowplot::get_legend(bee_plot_legend(yrs = "2018", month = "January-March"))
 
@@ -188,8 +188,8 @@ legend <- cowplot::get_legend(bee_plot_legend(yrs = "2018", month = "January-Mar
 rect <- rectGrob(
   x = 0,
   y = 0,
-  width = 4,
-  height = 3.5,
+  width = 6,
+  height = 4,
   #hjust = 0, vjust = 1,
   gp = gpar(fill = "white", alpha = 1)
 )
@@ -220,39 +220,38 @@ ggdraw() +
   #legend
   draw_plot(legend, x = 0.6, y = 0.755, height = 0.25, width = 0.4) +
   draw_label("Percent of bee colony lost\n across season per year",
-             x = 0.711, y = 0.90, size = 10, vjust = 0, hjust = 0,
+             x = 0.711, y = 0.90, size = 11, vjust = 0, hjust = 0,
              fontface = "bold") +
-  draw_label("0%", x = 0.69, y = 0.85,
+  draw_label("0%", x = 0.695, y = 0.85,
              size = 10, hjust = 0, vjust = 0) +
-  draw_label("10%", x = 0.72, y = 0.85,
+  draw_label("10%", x = 0.725, y = 0.85,
              size = 10, hjust = 0, vjust = 0) +
-  draw_label("20%", x = 0.76, y = 0.85,
+  draw_label("20%", x = 0.765, y = 0.85,
             size = 10, hjust = 0, vjust = 0) +
-  draw_label("30%", x = 0.80, y = 0.85,
+  draw_label("30%", x = 0.805, y = 0.85,
              size = 10, hjust = 0, vjust = 0) +
-  draw_label("40%", x = 0.84, y = 0.85,
+  draw_label("40%", x = 0.845, y = 0.85,
              size = 10, hjust = 0, vjust = 0) +
-  draw_label("50%", x = 0.88, y = 0.85,
+  draw_label("50%", x = 0.885, y = 0.85,
              size = 10, hjust = 0, vjust = 0) +
   # Title
   draw_label("Percent of bee colony lost\nin the United States (2018-2021)",
-             x = 0.07, y = 0.87, size = 24, vjust = 0, hjust = 0, fontface = "bold",
-             color = "#013a63") +
+             x = 0.07, y = 0.87, size = 27, vjust = 0, hjust = 0, fontface = "bold",
+             color = "#013a63", fontfamily = "lobs") +
   # year
-  draw_label("2018", x = x1-0.05, y = y1+0.12, size = 22, vjust = 0.5, hjust = 0.5, color = "#90caf9", fontface = "bold") +
-  draw_label("2019", x = x1-0.05, y = y2+0.12, size = 22, vjust = 0.5, hjust = 0.5, color = "#90caf9", fontface = "bold") +
-  draw_label("2020", x = x1-0.05, y = y3+0.12, size = 22, vjust = 0.5, hjust = 0.5, color = "#90caf9", fontface = "bold") +
-  draw_label("2021", x = x1-0.05, y = y4+0.12, size = 22, vjust = 0.5, hjust = 0.5, color = "#90caf9", fontface = "bold") +
+  draw_label("2018", x = x1-0.05, y = y1+0.12, size = 23, vjust = 0.5, hjust = 0.5, color = "#90caf9", fontface = "bold", fontfamily = "cav") +
+  draw_label("2019", x = x1-0.05, y = y2+0.12, size = 23, vjust = 0.5, hjust = 0.5, color = "#90caf9", fontface = "bold", fontfamily = "cav") +
+  draw_label("2020", x = x1-0.05, y = y3+0.12, size = 23, vjust = 0.5, hjust = 0.5, color = "#90caf9", fontface = "bold", fontfamily = "cav") +
+  draw_label("2021", x = x1-0.05, y = y4+0.12, size = 23, vjust = 0.5, hjust = 0.5, color = "#90caf9", fontface = "bold", fontfamily = "cav") +
   # season
-  draw_label("Jan-Mar", x = x1+0.08, y = y1+0.20, size = 18, vjust=0.5, hjust = 0.5, color = "#90caf9", fontface = "bold") +
-  draw_label("Apr-Jun", x = x2+0.08, y = y1+0.20, size = 18, vjust=0.5, hjust = 0.5, color = "#90caf9", fontface = "bold") +
-  draw_label("Jul-Sept", x = x3+0.08, y = y1+0.20, size = 18, vjust=0.5, hjust = 0.5, color = "#90caf9", fontface = "bold") +
-  draw_label("Oct-Dec", x = x4+0.08, y = y1+0.20, size = 18, vjust=0.5, hjust = 0.5, color = "#90caf9", fontface = "bold") +
+  draw_label("Jan-Mar", x = x1+0.08, y = y1+0.22, size = 19, vjust=0.5, hjust = 0.5, color = "#90caf9", fontface = "bold", fontfamily = "cav") +
+  draw_label("Apr-Jun", x = x2+0.08, y = y1+0.22, size = 19, vjust=0.5, hjust = 0.5, color = "#90caf9", fontface = "bold", fontfamily = "cav") +
+  draw_label("Jul-Sept", x = x3+0.08, y = y1+0.22, size = 19, vjust=0.5, hjust = 0.5, color = "#90caf9", fontface = "bold", fontfamily = "cav") +
+  draw_label("Oct-Dec", x = x4+0.08, y = y1+0.22, size = 19, vjust=0.5, hjust = 0.5, color = "#90caf9", fontface = "bold", fontfamily = "cav") +
   draw_label(
-    "Source: USDA (2018-2021)\n@Topenimics",
-    x=0.75,y=0.08,size=12,vjust=1,hjust=0
+    "Source: USDA (2018-2021)\n@Topenomics",
+    x = 0.75,y = 0.08,size = 12,vjust = 1,hjust = 0, color = "#2a6f97"
   )
-  
   
   
   
