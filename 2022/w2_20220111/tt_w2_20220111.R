@@ -36,6 +36,7 @@ sysfonts::font_add_google("Caveat", "cav")
 showtext_auto()
 
 
+# main plot without legends
 bee_plot <- function(yrs, month) {
   
   sub <- colony %>% 
@@ -44,7 +45,7 @@ bee_plot <- function(yrs, month) {
   
   bee_sub <- us_counties %>% 
     left_join(sub)
-  
+
   bee_map <- ggplot(bee_sub) +
     geom_sf(aes(fill = colony_lost_pct), color = "white", size = 0.2) +
     scale_fill_gradientn(
@@ -54,24 +55,17 @@ bee_plot <- function(yrs, month) {
       breaks = c(10, 20, 30, 40, 50),
       labels = c("10%", "20%", "30%", "40%", "50%")
     ) +
-    guides(fill = guide_colorbar(
-      barheight = unit(4, units = "mm"),
-      barwidth = unit(50, units = "mm"),
-      direction = "horizontal",
-      title.position = "top",
-      label.position = "bottom",
-      title.hjust = 0.5
-    )) +
     labs(fill = "Percent of bee colony lost") +
     theme_void() +
     theme(
-      legend.text = element_blank(),
-      legend.title = element_blank(),
       legend.position = "none"
     )
   
   return(bee_map)
 }
+
+
+# Legend reference
 
 bee_plot_legend <- function(yrs, month) {
   
@@ -253,38 +247,3 @@ ggdraw() +
     x = 0.75,y = 0.08,size = 12,vjust = 1,hjust = 0, color = "#2a6f97"
   )
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
