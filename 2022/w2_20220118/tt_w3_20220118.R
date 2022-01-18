@@ -20,18 +20,6 @@ choco <- chocolate %>%
   mutate(cocoa_pct = parse_number(cocoa_pct))
 
 
-
-# Fonts--------------------------------------------------------
-showtext::showtext_auto()
-sysfonts::font_add_google("Anton", "anton")
-sysfonts::font_add_google("Caveat", "cav")
-sysfonts::font_add_google("Lobster", "lobs")
-
-
-
-
-# Plot ---------------------------------------------------------
-
 choco_tokenized <- choco %>% 
   unnest_tokens("word", features, drop = FALSE) %>%
   filter(origin != "Blend", word != "cocoa") %>%
@@ -48,6 +36,16 @@ choco_tokenized <- choco %>%
   mutate(word = reorder_within(word, n, company_location))
 
 
+
+# Fonts--------------------------------------------------------
+showtext::showtext_auto()
+sysfonts::font_add_google("Anton", "anton")
+sysfonts::font_add_google("Caveat", "cav")
+sysfonts::font_add_google("Lobster", "lobs")
+
+
+
+# Plot ---------------------------------------------------------
 
 choco_tokenized %>% 
   ggplot(aes(n, word)) +
