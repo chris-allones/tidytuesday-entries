@@ -12,3 +12,7 @@
 
 ### Author: [BjnNowak](https://github.com/BjnNowak) | Code: [Link](https://github.com/BjnNowak/TidyTuesday/blob/main/SC_CocoaBeans.R)
 <img src="https://pbs.twimg.com/media/FJfhH1kX0AEZocG?format=png&name=large" width="400" height="500">
+
+### Author: [lau-cloud](https://github.com/lau-cloud) | Code: [Link](https://github.com/lau-cloud/TidyTuesdaycode/blob/master/follow_the_cacao/scipt.R)
+<img src="https://pbs.twimg.com/media/FJua6TLXsAcTmKP?format=png&name=900x900" width="500" height="400">
+
