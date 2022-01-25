@@ -1,0 +1,169 @@
+---
+title: 'TidyTuesday Week 4: board-games'
+author: "Christopher"
+date: "1/25/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Libraries
+library(tidyverse)
+library(janitor)
+theme_set(theme_minimal())
+
+```
+
+
+# Read data and wrangling
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2022-01-25')
+details <- tuesdata$details
+ratings <- tuesdata$ratings
+boardgames <- ratings %>% left_join(details, by = 'id') %>% clean_names()
+
+```
+
+
+
+```{r}
+boardgames %>% count(yearpublished) %>% 
+  filter(!yearpublished < 1900, yearpublished < 2021, !is.na(yearpublished)) %>%
+  ggplot(aes(yearpublished, n)) + 
+  geom_line()
+
+
+boardgames %>% 
+  ggplot(aes(users_rated)) + 
+  geom_histogram() +
+  scale_x_log10()
+
+
+boardgames %>% 
+  ggplot(aes(average)) +
+  geom_histogram()
+
+boardgames %>% 
+  ggplot(aes(maxplaytime / 60)) + 
+  geom_histogram() + 
+  scale_x_log10(breaks = 2 ^ seq(-2, 4))
+
+
+```
+
+Categorical variables
+
+
+```{r}
+boardgames %>% 
+  select(starts_with("board")) %>% 
+  View()
+
+boardgames_category <- boardgames %>% 
+  select(id, yearpublished, boardgamecategory, average) %>% 
+  filter(yearpublished > 1900, yearpublished < 2022) %>% 
+  separate_rows(boardgamecategory, sep = ",") %>% 
+  mutate(boardgamecategory = str_remove_all(boardgamecategory, "[[:punct:]]"),
+         boardgamecategory = str_trim(boardgamecategory)) %>% 
+  filter(!is.na(boardgamecategory))
+
+boardgames_publisher <- boardgames %>% 
+  select(id, yearpublished, boardgamepublisher, average) %>% 
+  filter(yearpublished > 1900, yearpublished < 2022) %>% 
+  separate_rows(boardgamepublisher, sep = ",") %>% 
+  mutate(boardgamepublisher = str_remove_all(boardgamepublisher, "[[:punct:]]"),
+         boardgamepublisher = str_trim(boardgamepublisher)) %>% 
+  filter(!is.na(boardgamepublisher))
+
+
+boardgames_category %>% 
+  count(boardgamecategory, sort = TRUE) %>%
+  head(30) %>% 
+  mutate(boardgamecategory = fct_reorder(boardgamecategory, n)) %>%
+  ggplot(aes(boardgamecategory, n)) +
+  geom_col() +
+  geom_label(aes(label = n)) +
+  coord_flip()
+
+boardgames_category %>% 
+  group_by(boardgamecategory) %>% 
+  summarise(rating = mean(average, na.rm = TRUE),
+            n = n()) %>% 
+  arrange(desc(n)) %>% 
+  ungroup() %>%
+  mutate(boardgamecategory = fct_reorder(boardgamecategory, rating)) %>% 
+  head(40) %>% 
+  ggplot(aes(boardgamecategory, rating)) +
+  geom_point(size = 4) +
+  geom_segment(aes(x = boardgamecategory, xend = boardgamecategory, 
+                   y = mean(boardgames_category$average), yend = rating),
+               size = 0.8) +
+  geom_hline(yintercept = mean(boardgames_category$average),
+             size = 0.5, 
+             color = "gray60",
+             linetype = "dashed") +
+  coord_flip() +
+  theme(plot.margin = margin(rep(20, 4)),
+        panel.grid = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 10)) +
+  labs(x = element_blank(),
+       y = element_blank()) +
+  annotate()
+
+
+boardgames_publisher %>% 
+  filter(!boardgamepublisher %in% c("Inc", "Ltd")) %>% 
+  group_by(boardgamepublisher) %>% 
+  summarise(rating = mean(average, na.rm = TRUE),
+            n = n()) %>% 
+  arrange(desc(n)) %>% 
+  ungroup() %>%
+  mutate(boardgamepublisher = fct_reorder(boardgamepublisher, rating)) %>% 
+  head(40) %>% 
+  ggplot(aes(boardgamepublisher, rating)) +
+  geom_point(size = 4) +
+  geom_segment(aes(x = boardgamepublisher, xend = boardgamepublisher, 
+                   y = mean(boardgames_publisher$average), yend = rating),
+               size = 0.8) +
+  geom_hline(yintercept = mean(boardgames_publisher$average),
+             size = 0.5, 
+             color = "gray60",
+             linetype = "dashed") +
+  coord_flip() +
+  theme(plot.margin = margin(rep(15, 4)),
+        panel.grid = element_blank(),
+        plot.title = element_text(size = 20, 
+                                  hjust = -0.8),
+        plot.subtitle = element_text(size = 12, 
+                                     hjust = -0.5, 
+                                     margin = margin(b = 20)),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 10)) +
+  labs(x = element_blank(),
+       y = element_blank(),
+       title = "Top rated boardgame publishers (1900-2021)",
+       subtitle = "Above and below above ratings of boardgame publishers")
+  
+  
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
