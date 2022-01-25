@@ -29,7 +29,7 @@ boardgames_publisher <- boardgames %>%
   ungroup() %>%
   mutate(above_avg_rating = rating > avg_rating) %>% 
   mutate(boardgamepublisher = fct_reorder(boardgamepublisher, rating)) %>% 
-  head(40) %>% 
+  head(40)
 
 
 # Fonts
@@ -64,6 +64,7 @@ boardgames_publisher %>%
         plot.title = element_text(size = 44, family = "dance", hjust = 0.5, color = "cyan4"),
         plot.title.position = "plot",
         plot.subtitle = element_text(size = 16, margin = margin(b = 20), hjust = 0.5, family = "abel", color = "firebrick1"),
+        plot.caption = element_text(color = "grey40", size = 12),
         axis.text.x = element_blank(),
         axis.text.y = element_text(size = 11, family = "abel", color = "grey10"),
         axis.ticks = element_blank(),
@@ -71,7 +72,8 @@ boardgames_publisher %>%
   labs(x = element_blank(),
        y = element_blank(),
        title = "Top rated boardgame publishers",
-       subtitle = "Above and below average ratings of boardgame publishers (1900-2021)") +
+       subtitle = "Above and below average ratings of boardgame publishers (1900-2021)",
+       caption = "#TidyTuesday Week 4\nData source: Kaggle / Board Game Geeks | @Topenomics") +
   geom_curve(data = arrows, aes(x = x1, xend = x2, y = y1, yend = y2),
              arrow = arrow(length = unit(0.5, "cm")),
              size = 1,
