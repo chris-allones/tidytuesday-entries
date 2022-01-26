@@ -60,18 +60,10 @@ boardgames_publisher %>%
                    y = avg_rating, yend = rating),
                size = 0.8) +
   geom_hline(yintercept = avg_rating, size = 0.5, color = "gray60", linetype = "dashed") +
-  geom_text(data = boardgames_publisher_sub_up, 
-            aes(label = boardgamepublisher,  y = 0),
-            hjust = 1,
-            nudge_y = 6.4,
-            size = 4,
-            family = "abel") +
-  geom_text(data = boardgames_publisher_sub_down, 
-            aes(label = boardgamepublisher,  y = 0),
-            hjust = 0,
-            nudge_y = 6.44,
-            size = 4,
-            family = "abel") +
+  geom_text(data = boardgames_publisher_sub_up, aes(label = boardgamepublisher,  y = 0),
+            hjust = 1, nudge_y = 6.4, size = 4, family = "abel") +
+  geom_text(data = boardgames_publisher_sub_down, aes(label = boardgamepublisher,  y = 0),
+            hjust = 0, nudge_y = 6.44, size = 4, family = "abel") +
   coord_flip() +
   theme(plot.margin = margin(rep(17, 4)),
         panel.background = element_blank(),
@@ -81,7 +73,6 @@ boardgames_publisher %>%
         plot.subtitle = element_text(size = 16, margin = margin(b = 20), hjust = 0.5, family = "abel", color = "firebrick1"),
         plot.caption = element_text(color = "grey40", size = 12),
         axis.text.x = element_blank(),
-        # axis.text.y = element_text(size = 11, family = "abel", color = "grey10"),
         axis.text.y = element_blank(),
         axis.ticks = element_blank(),
         legend.position = "none") +

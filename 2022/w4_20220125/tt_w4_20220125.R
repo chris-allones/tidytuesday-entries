@@ -42,11 +42,11 @@ showtext::showtext_auto()
 
 
 # Plot
-avg_rating <- mean(boardgames_publisher$average)
+avg_rating <- mean(boardgames$average)
 
-arrows <- tibble(x1 = c("LLC", "Mayfair Games"),
+arrows <- tibble(x1 = c("Hobby World", "Mayfair Games"),
                  y1 = c(5.9, 7),
-                 x2 = c("Arclight", "Ravensburger"),
+                 x2 = c("Asmodee", "Ravensburger"),
                  y2 = c(avg_rating - 0.02, avg_rating + 0.02),
                  above_avg_rating = c(TRUE, FALSE))
 
@@ -77,11 +77,11 @@ boardgames_publisher %>%
   geom_curve(data = arrows, aes(x = x1, xend = x2, y = y1, yend = y2),
              arrow = arrow(length = unit(0.5, "cm")),
              size = 1,
-             curvature = -0.4) +
-  annotate("text", x = "Broadway Toys LTD", y = 5.9, 
-           label = glue::glue("Boardgame publishers\nwhose ratings are above average rating ({round(avg_rating, 2)})."),
+             curvature = 0.4) +
+  annotate("text", x = "IELLO", y = 5.9, 
+           label = glue::glue("Boardgame publishers\nwhose ratings are\n above average rating ({round(avg_rating, 2)})."),
            color = "cyan4", lineheight = 0.9, size = 4.5) +
-  annotate("text", x = "KOSMOS", y = 7, 
-           label = glue::glue("Boardgame publishers\nwhose ratings are below average rating ({round(avg_rating, 2)})."),
+  annotate("text", x = "Piatnik", y = 7, 
+           label = glue::glue("Boardgame publishers\nwhose ratings are\n below average rating ({round(avg_rating, 2)})."),
            color = "firebrick1", lineheight = 0.9, size = 4.5)
            
