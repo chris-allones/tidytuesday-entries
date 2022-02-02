@@ -6,32 +6,29 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 library(tidyverse)
 library(janitor)
 library(tidytext)
 library(ggbump)
 library(ggimage)
+library(plotly)
 theme_set(theme_minimal())
 
-#fonts
-sysfonts::font_add_google("Oswald", "oswald")
-sysfonts::font_add_google("Arimo", "arimo")
-showtext::showtext_auto()
- 
+
 ```
 
 # Reading data and wrangle
 
 ```{r}
-breed_traits <- read_csv("data/breed_traits.csv")
-trait_description <- read_csv("data/trait_description.csv")
-breed_rank_all <- read_csv("data/breed_rank_all.csv") %>% clean_names()
+# import data from tidytuesdayR
+breed_traits <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-01/breed_traits.csv')
+trait_description <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-01/trait_description.csv')
+breed_rank_all <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-01/breed_rank.csv') %>% clean_names()
 
 
-
-breed_top <- 
+breed_top_10 <- 
 breed_rank_all %>% 
   pivot_longer(cols = -c("breed", "links", "image"),
                names_to = "year",
@@ -41,8 +38,16 @@ breed_rank_all %>%
 
 
 
-  
 
+```
+
+# Explore data
+
+Looking at the `breed_traits` data, we can format the dataset in a long format where all traits are in one column and ratings in a another column. Also, we can rename the traits in one word description for easy navigation of different traits rated.
+
+
+```{r}
+# traits into long format
 traits <- breed_traits %>% 
   select(
     Breed,
@@ -66,58 +71,95 @@ traits <- breed_traits %>%
                values_to = "rating") %>% 
   clean_names()
 
+traits
+
 ```
 
 
-# Explore data
+## What is the averall average traits rating across different dog breeds?
 
-```{r}
-traits %>%
-  na.omit() %>% 
-  group_by(breed, traits) %>% 
+In a 1 to 5 level, overall traits rating across dog breeds ranges from 3 to 4.5. 
+
+```{r out.width="100%"}
+
+traits %>% 
+  group_by(breed) %>% 
   summarise(avg_rating = mean(rating, na.rm = TRUE)) %>% 
-  arrange(desc(avg_rating)) %>% 
   ungroup() %>% 
-  mutate(breed = fct_reorder(breed, avg_rating)) %>% 
-  head(100) %>%
-  ggplot(aes(avg_rating, breed, fill = avg_rating)) +
-  geom_col() +
-  scale_fill_gradient() +
-  facet_wrap(~traits, scales = "free")
+  arrange(desc(avg_rating)) %>% 
+  head(180) %>%
+  ggplot(aes(avg_rating, breed, color = rev(avg_rating))) +
+  geom_point(size = 2, show.legend = FALSE) + 
+  geom_text(aes(label = breed), check_overlap = TRUE) +
+  scale_x_continuous(breaks = seq(2, 4.5, 0.5), limits = c(2, 4.5)) +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(rep(10, 4)),
+        panel.grid = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none")
+  
 
 ```
 
 
-Top 10 breed across years
 
-```{r}
-breed_top %>% 
+## What are the top dog breeds across years
+
+In the bar plot, the Retriever (Labrador) has been consistently the most popular breed. While looking at a line plot across years, the french bull dog has staggering increase in popularity.
+
+Using `plotly`, we can covert `ggplot` into an interactive plot. We can hover the plot and look at its information mapped.
+
+```{r out.width="100%"}
+breed_top_10 %>% 
   mutate(breed = reorder_within(breed, rank, year)) %>%
-  ggplot(aes(rank, breed)) +
-  geom_col() +
+  ggplot(aes(rank, breed, fill = breed)) +
+  geom_col(show.legend = FALSE) +
   geom_text(aes(label = rank), nudge_x = 0.5) +
   scale_y_reordered() +
-  facet_wrap(~ year, scales = "free") +
+  facet_wrap(~ year, scales = "free", ncol = 2) +
   theme(axis.text.x = element_blank()) +
   labs(x = "",
        y = "")
 ```
 
+```{r out.width="100%"}
+gg_top_breed <- 
+breed_top_10 %>% 
+  group_by(year, breed) %>% 
+  summarise(rank = mean(rank, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = year, rank, color = breed)) +
+  geom_line(size = 1) +
+  geom_point(size = 4) +
+  geom_text(data = breed_top_10 %>% filter(year == 2020),
+            aes(label = breed), 
+            x = 2020 - 0.5, 
+            nudge_y = 0.2) +
+  scale_y_reverse(breaks = seq(0, 10, 1)) +
+  theme(legend.position = "none")
+  
+ggplotly(gg_top_breed)
+```
 
 
-Most playful dog breeds
+
+# Final plot
+
+For the final plot, we will try to make a bump plot to see how ranks among most popular dogs changes over the years.
 
 ```{r}
-ope_stranger_dogs <- 
-traits %>% 
+# Data wrangling
+ope_stranger_dogs <- traits %>% 
   filter(traits == "Strangers") %>% 
   group_by(breed) %>% 
   summarise(rating = mean(rating, na.rm = TRUE)) %>% 
   ungroup() %>% 
   mutate(breed = str_trim(breed, side = "both"))
 
-dog_rank_stranger <- 
-top_ranking_dog %>% 
+top_ranking_dog <- breed_top_10 %>% count(breed)
+
+dog_rank_stranger <- top_ranking_dog %>% 
   left_join(ope_stranger_dogs, by = "breed") %>% 
   mutate(rating = case_when(breed == "French Bulldogs" ~ 5,
                             breed == "German Shepherd Dogs" ~ 3,
@@ -129,22 +171,26 @@ top_ranking_dog %>%
                             TRUE ~ rating)) %>% 
   select(-n)
 
-  
-dog_rank_stranger %>% count(rating)
-  
 ```
 
 
-
-
-# Final plot
-
 ```{r}
-breed_top %>% 
+
+#fonts
+sysfonts::font_add_google("Oswald", "oswald")
+sysfonts::font_add_google("Arimo", "arimo")
+showtext::showtext_auto()
+
+```
+
+
+```{r out.width="100%"}
+
+breed_top_10 %>% 
   left_join(dog_rank_stranger, by = "breed") %>% 
   ggplot(aes(year, rank)) +
   geom_bump(aes(group = breed, color = factor(rating)), 
-            size = 12, 
+            size = 10, 
             smooth = 5,
             alpha = 0.7) +
   scale_color_manual("Openness to strangers level (1-5)",
@@ -153,29 +199,32 @@ breed_top %>%
                               "5" = "#184e77"),
                      aesthetics = c("color", "fill")) +
   scale_y_reverse() +
-  scale_x_continuous(breaks = seq(2013, 2020, 1)) +
-  geom_text(data = breed_top %>% filter(year == 2018, rank %in% c(1, 2, 3, 4, 5, 6, 7, 8)), 
-            aes(label = breed), family = "oswald", size = 6, color = "#f5f3f4") +
-  geom_text(data = breed_top %>% filter(year == 2019, !rank %in% c(1, 2, 3, 4, 5, 6, 7, 8)), 
-            aes(label = breed), family = "oswald", size = 6, color = "#f5f3f4") +
+  scale_x_continuous(breaks = seq(2013, 2020, 1))  +
+  geom_text(data = breed_top_10 %>% filter(year == 2018, rank %in% c(1, 2, 3, 4, 5, 6, 7, 8)),
+            aes(label = breed), family = "oswald", size = 5.5, color = "#f5f3f4") +
+  geom_text(data = breed_top_10 %>% filter(year == 2019, !rank %in% c(1, 2, 3, 4, 5, 6, 7, 8)),
+            aes(label = breed), family = "oswald", size = 5.5, color = "#f5f3f4") +
   theme_void() +
   theme(plot.margin = margin(rep(15, 4)),
         plot.title = element_text(size = 24, family = "arimo", color = "#3d405b", face = "bold"),
-        plot.subtitle = element_text(size = 18, color = "#3d405b", margin = margin(b = 15)),
-        plot.caption = element_text(size = 12, color = "#3d405b"),
+        plot.subtitle = element_text(size = 18, color = "#3d405b", margin = margin(b = 20, t = 10)),
+        plot.caption = element_text(size = 12, color = "#3d405b", margin = margin(t = 10)),
         panel.grid = element_blank(),
         axis.text.y = element_blank(),
         axis.text.x = element_text(size = 12, face = "bold"),
-        legend.position = "top") +
+        legend.position = "none",
+        # legend.justification = "left",
+        # legend.box.margin = margin(t=2, b=-2),
+        # legend.text = element_text(size = 16, color = "#3d405b"),
+        # legend.title = element_text(size = 16, color = "#3d405b")
+        ) +
   labs(x = "",
        y = "",
        title = "Top 10 most popular dog breed and level of openness to strangers",
        subtitle = "Popularity of dog breeds by AKC registration statistics",
        caption = "#TidyTuesday week 5\n Data source: AKC courtecy of KKakey | @Topenomics") +
-
-  geom_image(data = breed_top %>% filter(year == min(year)),
-             aes(image = image, x = year - 0.4), asp = 2) +
-  geom_image(data = breed_top %>% filter(year == max(year)),
+  geom_image(data = breed_top_10 %>% filter(year == min(year)),
+           aes(image = image, x = year - 0.4), asp = 2) +
+  geom_image(data = breed_top_10 %>% filter(year == max(year)),
              aes(image = image, x = year + 0.4), asp = 2)
-  
 ```
