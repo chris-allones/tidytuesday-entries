@@ -1,0 +1,174 @@
+---
+title: 'TidyTuesday week 5: Tuskegee Airmen'
+author: "Christopher"
+date: "2/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(sf)
+library(lubridate)
+library(ggbump)
+theme_set(theme_minimal())
+```
+
+
+## Reading data and wrangle
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2022, week = 6)
+airmen <- tuesdata$airmen
+
+airmen %>% glimpse()
+
+us_state_abb <- read_csv("us_state_abb.csv") %>% 
+  rename("state_name" = state,
+         state = state_abb)
+
+airmen2 <- 
+airmen %>% 
+  left_join(us_state_abb, by = "state") %>% 
+  select(-state, state = state_name) %>% 
+  mutate(year_grad = ymd(graduation_date),
+         year_grad = floor_date(year_grad, "month"),
+         year_grad = year(year_grad))
+
+# Major events in world war 2
+ww2_event <- 
+tibble(x = c(1939, 1941, 1941.5, 1942, 1943, 1944, 1945, 1946, 1947),
+       y = c(10, 70, 120, 170, 200, 250, 160, 120, 60),
+       label = c(
+         "Germany invades Poland, Britain and France declare war on Germany.",
+         "Germany invades the Soviet Union.",
+         "Japan attacks Pearl Harbor and the US enters the war.",
+         "Battle of Midway.",
+         "Soviet Union defeats Germany at Battle of Stalingard.",
+         "Allied Pwers carry out D-Day Invasion.",
+         "FDR dies. Truman becomes next US president.",
+         "Germany surrenders.",
+         "Us drops atomic bombs in Japan. Japan surrenders, ending the war."
+       )) %>% 
+  mutate(label = str_wrap(label, width = 30))
+
+```
+
+
+## Explore
+
+```{r}
+airmen %>% count(rank_at_graduation) %>% 
+  na.omit() %>% 
+  mutate(rank_at_graduation = fct_reorder(rank_at_graduation, n)) %>% 
+  ggplot(aes(n, rank_at_graduation)) +
+  geom_col()
+```
+```{r}
+airmen %>% count(pilot_type) %>% 
+  na.omit() %>% 
+  mutate(pilot_type = fct_reorder(pilot_type, n)) %>% 
+  ggplot(aes(n, pilot_type)) +
+  geom_col()
+```
+
+
+```{r}
+airmen %>% count(state) %>% 
+  na.omit() %>%
+  mutate(state = fct_reorder(state, n)) %>% 
+  head(20) %>% 
+  ggplot(aes(n, state)) +
+  geom_col()
+```
+
+```{r}
+airmen2 %>% 
+  group_by(graduation_date, rank_at_graduation) %>% 
+  summarise(n = n()) %>% 
+  ungroup() %>% 
+  filter(!rank_at_graduation %in% c("N/A", NA)) %>% 
+  ggplot(aes(graduation_date, n, color = rank_at_graduation)) +
+  geom_line()
+```
+
+
+```{r}
+airmen2 %>% 
+  group_by(year_grad) %>% 
+  summarise(n = n()) %>% 
+  na.omit() %>% 
+  ungroup() %>% 
+  ggplot(aes(x = year_grad, y = n)) +
+  geom_bump(size = 1.3, color = "#74c69d", smooth = 6)+
+  geom_point(size = 3, color = "#52b788") +
+  geom_point(size = 4.5, stroke = 1.1, color = "#b7e4c7", shape = 1) +
+  geom_text(aes(label = n), 
+            vjust = -1,
+            size = 4,
+            color = "grey60",
+            fontface = "bold") +
+  geom_point(data = ww2_event, aes(x=x, y=y)) +
+  geom_segment(data = ww2_event, 
+               aes(x=x, xend=x, y=0, yend=y),
+               color = "grey40",
+               linetype = "dashed") +
+  geom_text(data = ww2_event,
+            aes(label = label, x = x, y = y),
+            size = 3.2,
+            vjust = -0.4,
+            hjust = 0,
+            color = "grey50") +
+  scale_x_continuous(breaks = seq(1939, 1949, 1), limits = c(1939, 1949)) +
+  scale_y_continuous(limits = c(0, 400)) +
+  theme(plot.margin = margin(rep(20, 4)),
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text.x = element_text(size = 12, color = "grey60"),
+        axis.text.y = element_blank()
+        )
+```
+
+
+## Plot
+
+```{r}
+us_counties <- st_as_sf(maps::map(database = "state", plot = FALSE, fill = TRUE)) %>% 
+  mutate(state  = str_to_title(ID))
+
+airmen_sf <- 
+airmen2 %>% 
+  count(state) %>% 
+  left_join(us_counties)
+
+ggplot(airmen_sf) +
+  geom_sf(aes(fill = n, geometry = geom)) +
+  scale_fill_viridis_c()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -44,7 +44,7 @@ bee_plot <- function(yrs, month) {
     filter(months == month)
   
   bee_sub <- us_counties %>% 
-    left_join(sub)
+    left_join(colony)
 
   bee_map <- ggplot(bee_sub) +
     geom_sf(aes(fill = colony_lost_pct), color = "white", size = 0.2) +
