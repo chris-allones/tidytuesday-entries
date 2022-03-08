@@ -1,0 +1,180 @@
+---
+title: 'TidyTuesday week 10: Erasmus'
+author: "Christopher"
+date: "3/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Libraries
+library(tidyverse)
+library(tidytext)
+library(elementalist)
+theme_set(theme_minimal())
+```
+
+
+## Reading data and wangle
+
+```{r}
+# Importing dataset
+tuesdata <- tidytuesdayR::tt_load(2022, week = 10)
+erasmus <- tuesdata$erasmus
+country_name <- read_delim("https://raw.githubusercontent.com/chris-allones/tidytuesday-entries/main/2022/w10_20220308/country_names.csv", delim=';')
+
+```
+
+```{r}
+
+sending <- 
+erasmus %>% 
+  mutate(ct=1) %>%
+  group_by(sending_country_code, academic_year) %>%
+  summarize(sending = sum(na.omit(participants))) %>%
+  left_join(country_name, by = c("sending_country_code"="code"))
+
+receiving <- 
+erasmus %>% 
+  mutate(ct=1) %>%
+  group_by(receiving_country_code, academic_year) %>%
+  summarize(receiving = sum(na.omit(participants))) %>%
+  left_join(country_name, by = c("receiving_country_code"="code"))
+
+participants <- 
+sending %>% 
+  left_join(receiving) %>% 
+  mutate(sending_2 = -sending) %>% 
+  group_by(country_name) %>% 
+  mutate(receiving_total = sum(na.omit(receiving)),
+         sending_total = sum(na.omit(sending))) %>% 
+  filter(receiving_total > 500) %>% 
+  filter(!is.na(country_name)) %>% 
+  ungroup()
+
+
+participants_avg <- 
+  participants %>% 
+  group_by(country_name, academic_year) %>% 
+  summarise(m_sending = mean(sending, na.rm = T),
+            m_receiving = mean(receiving, na.rm = T),
+            m_receiving_total = mean(receiving_total, na.rm = T)) %>% 
+  ungroup()
+  
+
+```
+
+
+# Plotting
+
+```{r}
+
+# label receiving and outgoing
+send <- tibble(
+  y= -0.5,
+  x=-4000,
+  label=
+    'Outgoing')
+
+receive <- tibble(
+  y= -0.5,
+  x= 4000,
+  label=
+    'Incoming')
+
+# Add font
+sysfonts::font_add_google("Caveat", "caveat")
+showtext::showtext_auto()
+
+```
+
+```{r}
+participants_avg %>% 
+  filter(country_name != "Hungary") %>% 
+  group_by(academic_year) %>% 
+  top_n(n = 15, wt = m_receiving_total) %>% 
+  mutate(country_lbl = country_name) %>% 
+  mutate(country_name = reorder_within(country_name, m_receiving, academic_year)) %>% 
+ggplot() + 
+  geom_text(data = send, aes(label = label, x = x, y = y), 
+            size = 5,
+            color = "#e07a5f",
+            hjust = -0,
+            vjust = -0.4) +
+  geom_text(data = receive, aes(label = label, x = x, y = y), 
+            size = 5,
+            color = "#2a9d8f",
+            hjust = 1,
+            vjust = -0.4) +
+  geom_segment(aes(y = country_name,
+                   yend = country_name,
+                   x = 0,
+                   xend = m_receiving),
+               color = "#2a9d8f",
+               size = 5.5,
+               alpha = 0.9) +
+  geom_segment(aes(y = country_name,
+                   yend = country_name,
+                   x = 0,
+                   xend = -m_sending),
+               color = "#e07a5f",
+               size = 5.5,
+               alpha = 0.9) +
+  geom_text(aes(label = country_lbl, x = 0, y = country_name),
+            size = 3.5,
+            color = "#161a1d",
+            alpha = 0.5) +
+  scale_y_reordered() +
+  facet_wrap(~ academic_year, scales = "free_y") +
+  coord_cartesian(expand = TRUE) +
+  theme(plot.margin = margin(rep(15, 4)),
+        plot.background = element_rect(fill = "#edf2f4", color = "#edf2f4"),
+        plot.caption = element_text(size = 34, hjust = 0.5, 
+                                  family = "caveat", color = "#2a9d8f",
+                                  margin = margin(t = 20)),
+        plot.subtitle = element_text(hjust = 1, color = "grey60",
+                                     margin = margin(b = 10)),
+        strip.text = element_text(margin = margin(t = 10, b = 10), 
+                                  size = 20, color= "#edf2f4", family = "caveat"),
+        strip.background = element_rect_round(fill = "#e26d5c", color = "#e26d5c",
+                                              radius = unit(8, "pt")),
+        panel.grid = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank()) +
+  labs(caption = "Erasmus student exchanges in Europe by academic year", 
+       subtitle = "Data: Data.Europa | Plot: @Topenomics")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
