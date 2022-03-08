@@ -1,0 +1,50 @@
+---
+title: 'TidyTuesday week 10: Erasmus'
+author: "Christopher"
+date: "3/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Libraries
+library(tidyverse)
+theme_set(theme_minimal())
+```
+
+
+## Reading data and wangle
+
+```{r}
+# Importing dataset
+tuesdata <- tidytuesdayR::tt_load(2022, week = 10)
+erasmus <- tuesdata$erasmus
+iso<- read_delim("country_names.csv", delim=';')
+
+erasmus %>% View()
+
+```
+
+
+## Explore data
+
+```{r}
+erasmus %>% count(academic_year)
+
+# Sending country
+erasmus %>% count(sending_country_code) %>% 
+  mutate(sending_country_code = fct_reorder(sending_country_code, n)) %>% 
+  ggplot(aes(n, sending_country_code)) +
+  geom_col()
+
+# Receiving country
+erasmus %>% count(receiving_country_code) %>% 
+  mutate(receiving_country_code = fct_reorder(receiving_country_code, n)) %>% 
+  ggplot(aes(n, receiving_country_code)) +
+  geom_col()
+
+```
+
