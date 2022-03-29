@@ -1,4 +1,4 @@
-#TidyTuesday week 13: Babynames
+#TidyTuesday week 13: Collegiate sports
 
 # Libraries
 library(tidyverse)
