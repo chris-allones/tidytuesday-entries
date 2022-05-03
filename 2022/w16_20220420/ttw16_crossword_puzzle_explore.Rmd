@@ -1,0 +1,219 @@
+---
+title: "TidyTuesday week 16: crossword puzzle"
+author: "Christopher"
+date: "4/20/2022"
+output: html_document
+---
+
+# Reading and wrangling data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(lubridate)
+library(skimr)
+theme_set(theme_minimal())
+
+# Libraries
+tuesdata <- tidytuesdayR::tt_load(2022, week = 16)
+big_dave <- tuesdata$big_dave
+times <- tuesdata$times
+
+clues <- 
+times %>% 
+  bind_rows(big_dave) %>% 
+  select(-rowid)
+  
+```
+
+```{r}
+clues %>% skim()
+```
+
+
+
+## What is the frequency of crossword puzzles by sources?
+
+```{r}
+clues %>%
+  count(puzzle_date = floor_date(puzzle_date, "month"), source) %>% 
+  ggplot(aes(puzzle_date, n, fill = source)) +
+  geom_col()
+
+```
+
+
+## In which position does a definition located within the clue?
+
+Definition can be found usually at the beginning and end of the clue.
+
+```{r}
+clues_def_pos <- 
+clues %>% 
+  extract(clue, c("clue", "lengths"), "(.*) \\((.*)\\)$") %>% 
+  mutate(year = year(puzzle_date),
+         definition_length = str_length(definition),
+         definition_index = str_locate(clue, fixed(definition))[, 1],
+         definition_position = (definition_index - 1) / (str_length(clue) - str_length(definition)))
+
+clues_def_pos %>% 
+  ggplot(aes(definition_position)) + 
+  geom_histogram(boundary = 0, binwidth = 0.05)
+
+```
+
+## Percentage of missing crossword puzzle solutions across years by sources.
+
+```{r}
+clues_def_pos %>% 
+  group_by(year, source) %>% 
+  summarise(pct_missing = mean(is.na(definition_position))) %>% 
+  ggplot(aes(year, pct_missing, color = source)) + 
+  geom_line()
+```
+
+
+## What is the percentage that the definition will be found either start or end of the clue across available years?
+
+
+
+```{r}
+clues_def_pos %>% 
+  filter(!is.na(definition_position)) %>%
+  group_by(year, source) %>% 
+  summarise(pct_start_or_end = mean(definition_position %in% c(0, 1)),
+            n = n()) %>% 
+  filter(n >= 1000) %>% 
+  ggplot(aes(year, pct_start_or_end, color = source)) + 
+  geom_line()
+```
+
+In the logistic regression, the percentage that definition will be at the start or end increases across year significantly, from 94% to 96%.
+
+```{r}
+clues_def_pos %>% 
+  filter(!is.na(definition_position),
+         source == "bigdave44") %>% 
+  mutate(start_end = definition_position %in% c(0, 1)) %>% 
+  glm(start_end ~ year, data = ., family = "binomial") %>% 
+  summary()
+```
+
+
+## Do longer clues indicate longer answers?
+
+Longer answers are associated with longer definition, but not by a lot (whether looking at the number of letters or number of words).
+
+```{r}
+clues_def_pos %>% 
+  filter(!is.na(definition_position)) %>% 
+  count(definition_length, answer_length = str_length(answer)) %>% 
+  ggplot(aes(definition_length, answer_length, fill = n)) +
+  geom_tile()
+```
+
+```{r}
+clues_def_pos %>% 
+  filter(!is.na(definition_position), !is.na(answer)) %>% 
+  with(cor.test(definition_length, str_length(answer)))
+```
+
+```{r}
+clues_def_pos_nwords <- 
+clues_def_pos %>% 
+  mutate(n_words_answer = str_count(lengths, ",") + 1,
+         n_words_definition = str_count(definition, " ") + 1)
+
+clues_def_pos_nwords %>% 
+  filter(!is.na(definition), !is.na(lengths)) %>% 
+  summarise(cor = cor(n_words_answer, n_words_definition))
+```
+
+
+Big Dave has been using shorter definitions over time as well as slightly more likely to be at the beginning or end.
+
+```{r}
+by_year_source <- 
+clues_def_pos_nwords %>% 
+  filter(!is.na(answer), !is.na(lengths)) %>% 
+  group_by(year, source) %>% 
+  summarise(n_puzzle = n(),
+            avg_n_words_answer = mean(n_words_answer),
+            avg_n_words_definition = mean(n_words_definition, na.rm = TRUE),
+            n_clues_definitions = sum(!is.na(n_words_definition)),
+            pct_start_end_or_end = mean(definition_position == 0 | definition_position == 1, na.rm = TRUE)) %>% 
+  filter(n_clues_definitions >= 1000)
+  
+by_year_source %>% 
+  ggplot(aes(year, avg_n_words_answer, color = source)) +
+  geom_line() +
+  labs(y = "Average number of words in the answer")
+
+by_year_source %>% 
+  ggplot(aes(year, avg_n_words_definition, color = source)) +
+  geom_line() +
+  geom_point(aes(size = n_clues_definitions)) +
+  labs(y = "Average number of words in the definition")
+
+by_year_source %>% 
+  ggplot(aes(year, pct_start_end_or_end, color = source)) +
+  geom_line() +
+  labs(y = "% of time at start of end")
+
+```
+
+
+
+## Text analysis
+
+```{r}
+
+clue_words <- 
+clues_def_pos_nwords %>% 
+  filter(!is.na(clue)) %>% 
+  mutate(clue = str_replace(clue, "’", "'")) %>% 
+  unnest_tokens(word, clue)
+
+clue_words %>% 
+  count(word, sort = TRUE) %>% 
+  anti_join(stop_words, by = "word") %>% 
+  head(20) %>% 
+  mutate(word = fct_reorder(word, n)) %>% 
+  ggplot(aes(n, word)) + 
+  geom_col()
+
+```
+
+
+Are the words used in cryptic crosswords different between the two sources?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
