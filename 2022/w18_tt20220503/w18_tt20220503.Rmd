@@ -1,0 +1,83 @@
+---
+title: "TidyTuesday week 18: Solar-Wind Utilities"
+author: "Christopher"
+date: "4/20/2022"
+output: html_document
+---
+
+# Reading and wrangling data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r}
+library(tidyverse)
+library(MetBrewer)
+library(tidytext)
+library(lubridate)
+library(skimr)
+theme_set(theme_minimal())
+
+tuesdata <- tidytuesdayR::tt_load('2022-05-03')
+tuesdata <- tidytuesdayR::tt_load(2022, week = 18)
+
+capacity <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/capacity.csv')
+wind <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/wind.csv')
+solar <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/solar.csv')
+average_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/average_cost.csv')
+  
+```   
+
+```{r}
+capacity %>% 
+  count(type)
+
+capacity %>% 
+  glimpse()
+
+```
+
+```{r}
+
+# Aes
+showtext_auto()
+font_add_google("Quicksand")
+font_add_google("Fira Sans Condensed", "Fira")
+
+capacity %>% 
+  mutate(xrow = row_number()) %>% 
+  filter(type != "Other") %>% 
+  mutate(type = fct_reorder(type, total_gw, .desc = TRUE)) %>% 
+  mutate(lab_gw = round(total_gw, 0) %>% as.character()) %>% 
+  ggplot() +
+  geom_col(aes(x = year, y = log2(total_gw + 1), fill = as.factor(year))) +
+  coord_polar() +
+  scale_fill_manual(values=met.brewer("Cross", 7)) +
+  scale_color_manual(values = met.brewer("Cross", 7)) +
+  ylim(-5, 10) +
+  xlim(2013, 2021) +
+  facet_wrap(~type, strip.position = "bottom") +
+  theme(plot.margin = margin(rep(15, 4)),
+        plot.title = element_text(family = "Fira", face = "bold", size = 35,
+                                  margin = margin(b=10), color = "#264653"),
+        plot.subtitle = element_text(family = "Fira", size = 16,
+                                  margin = margin(b=30), color = "#264653"),
+        strip.text = element_text(family="Fira", size=20, lineheight = 0.3, vjust =1,
+                                  color = "#264653"),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.justification = c(0,0)
+        ) +
+  guides(fill = guide_legend(nrow = 1,label.position = "top")) +
+  labs(title = "US Energy Power",
+       subtitle = "Values are in log of total gigawatts.",
+       fill = element_blank())
+  
+```
+
+
