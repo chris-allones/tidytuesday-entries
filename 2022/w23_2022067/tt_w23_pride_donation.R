@@ -53,7 +53,6 @@ p1 <-
         axis.text = element_blank(),
         legend.position = "none")
   
-
 p2 <- 
 ggplot() +
   geom_text(data = data.frame(x = -0.5, y = 0.7, label = lab_info), 
