@@ -2,6 +2,9 @@
 # setting working directory
 setwd("~/GitHub-repo/tidytuesday-entries/2023/w28_20230716_global_temperature")
 
+# acknowledgement
+## some codes were adopted from https://github.com/jedjohnson4/tidytuesday
+
 # libraries
 library(tidyverse)
 library(janitor)
