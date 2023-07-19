@@ -2,6 +2,9 @@
 # setting working directory
 setwd("~/GitHub-repo/tidytuesday-entries/2023/w29_20230719_ai_detection")
 
+# acknowledgement
+## some codes were adopted from Frank Hanel at https://www.frankhaenel.de/tidytuesday/2023/week_29.html
+
 # libraries
 library(tidyverse)
 library(patchwork)
